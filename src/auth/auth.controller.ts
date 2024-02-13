@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Req,
   Res,
   UseGuards,
@@ -19,6 +20,12 @@ import { JwtAuthGuard } from './guards/jwt.guard';
 import { RefreshTokenGuard } from './guards/refreshToken.guard';
 import { GoogleOathStrategy } from './strategies/google-oauth.stratety';
 import { GoogleOauthGuard } from './guards/google-oauth.guard';
+
+interface ResetPasswordDto {
+  userId: string;
+  token: string;
+  password: string;
+}
 
 @Controller('auth')
 export class AuthController {
@@ -74,5 +81,16 @@ export class AuthController {
     // retrieve user from DB or create user is he does not exist
     // generate and return access and refresh tokens
     return this.authService.googleAuth(req.user);
+  }
+
+  @Post('forgot-password')
+  forgotPassword(@Body() body: { email: string }) {
+    console.log('body==', body);
+    return this.authService.forgotPassword(body.email);
+  }
+
+  @Post('reset-password/:token')
+  resetPassword(@Param('token') token: string) {
+    return this.authService.resetPassword(token);
   }
 }

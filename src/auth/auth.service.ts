@@ -2,6 +2,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import { CredentialsDto } from './dtos';
@@ -15,6 +16,13 @@ interface TokenPayload {
   firstName?: string;
   lastName?: string;
 }
+
+const myUser = {
+  id: 23,
+  email: 'borel@gmail.com',
+  firstName: 'borel',
+  password: 'password04',
+};
 
 @Injectable()
 export class AuthService {
@@ -118,7 +126,49 @@ export class AuthService {
     }
   }
 
-  // utils method
+  async forgotPassword(email: string) {
+    // search user
+    let user = await this.userService.getByEmail(email);
+    if (!user) {
+      throw new NotFoundException();
+    }
+    // now generate reset-password link
+    let data = { sub: user.uuid, email: user.email };
+    let token = this.jwtService.sign(data, {
+      secret: 'mysecret',
+      expiresIn: '1m',
+    });
+    // create link
+    const reset_link = `localhost:4000/auth/password-reset/${token}`;
+    // TODO : Email Service send reset link by
+    return reset_link;
+  }
+
+  async resetPassword(token: any) {
+    try {
+      // verify token validity
+      this.jwtService.verify(token, {
+        secret: 'mysecret',
+      });
+      // decode token to
+      let user = this.jwtService.decode(token, {
+        json: true,
+      });
+      // confirm user's existence
+      let userExist = await this.userService.getByEmail(user.email);
+      if (!userExist) {
+        throw new UnauthorizedException();
+      }
+      return this.userService.update(userExist);
+    } catch (error) {
+      throw new UnauthorizedException();
+    }
+  }
+
+  /********************
+   * utils method
+  /********************/
+
   private async generateTokens(payload: TokenPayload) {
     // generate tokens
     const [accessToken, refreshToken] = await Promise.all([
