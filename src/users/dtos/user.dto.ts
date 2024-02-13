@@ -1,9 +1,10 @@
 export class UserDto {
-  uuid: number;
+  uuid?: number;
   email: string;
   firstName: string;
   lastName: string;
-  hashedRt: string;
+  password?: string;
+  hashedRt?: string;
   createdAt: Date;
   updatedAt: Date;
 }

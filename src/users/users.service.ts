@@ -46,7 +46,7 @@ export class UsersService {
   }
 
   // method to be used by auth service
-  async getByEmail(email: string): Promise<any> {
+  async getByEmail(email: string): Promise<UserDto> {
     return await this.prismaService.user.findUnique({
       where: {
         email,
@@ -59,7 +59,7 @@ export class UsersService {
   }
 
   update(user: UpdateUserDto) {
-    return `deleted ${user.toString()}`;
+    return `updated ${user.email}`;
   }
 
   delete(id: number) {
