@@ -9,6 +9,7 @@ import { CredentialsDto } from './dtos';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { appkeys } from 'src/config/keys';
+import { EmailService } from 'src/email/email.service';
 
 interface TokenPayload {
   sub: number;
@@ -29,6 +30,7 @@ export class AuthService {
   constructor(
     private readonly userService: UsersService,
     private jwtService: JwtService,
+    private readonly emailService: EmailService,
   ) {}
 
   // 1. method that validates user credentails
@@ -126,8 +128,21 @@ export class AuthService {
     }
   }
 
+  async verifyUserEmail(token: any) {
+    try {
+      // verify token validity
+      this.jwtService.verify(token, {
+        secret: 'mysecret',
+      });
+      // update user email-verified field
+      // this.userService.update()
+    } catch (error) {
+      throw new UnauthorizedException();
+    }
+  }
+
   async forgotPassword(email: string) {
-    // search user
+    // check user's existence
     let user = await this.userService.getByEmail(email);
     if (!user) {
       throw new NotFoundException();
@@ -138,13 +153,17 @@ export class AuthService {
       secret: 'mysecret',
       expiresIn: '1m',
     });
-    // create link
+    // create link  , TODO make hostname gloabel
     const reset_link = `localhost:4000/auth/password-reset/${token}`;
     // TODO : Email Service send reset link by
-    return reset_link;
+    this.emailService.sendResetPasswordEmail({
+      userName: user.firstName,
+      receiver: user.email,
+      link: reset_link,
+    });
   }
 
-  async resetPassword(token: any) {
+  async resetPassword(token: any, password: string) {
     try {
       // verify token validity
       this.jwtService.verify(token, {
@@ -159,7 +178,10 @@ export class AuthService {
       if (!userExist) {
         throw new UnauthorizedException();
       }
+      // TODO : hash password and update password
       return this.userService.update(userExist);
+
+      // TODO : send reset - succes email
     } catch (error) {
       throw new UnauthorizedException();
     }

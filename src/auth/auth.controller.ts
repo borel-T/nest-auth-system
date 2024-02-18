@@ -4,9 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Param,
   Req,
-  Res,
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
@@ -18,7 +16,6 @@ import { PublicRoute } from 'src/commons/decorators';
 import { Request } from 'express';
 import { JwtAuthGuard } from './guards/jwt.guard';
 import { RefreshTokenGuard } from './guards/refreshToken.guard';
-import { GoogleOathStrategy } from './strategies/google-oauth.stratety';
 import { GoogleOauthGuard } from './guards/google-oauth.guard';
 
 interface ResetPasswordDto {
@@ -85,12 +82,11 @@ export class AuthController {
 
   @Post('forgot-password')
   forgotPassword(@Body() body: { email: string }) {
-    console.log('body==', body);
     return this.authService.forgotPassword(body.email);
   }
 
   @Post('reset-password/:token')
-  resetPassword(@Param('token') token: string) {
-    return this.authService.resetPassword(token);
+  resetPassword(@Body() body: { token: string; password: string }) {
+    return this.authService.resetPassword(body.token, body.password);
   }
 }
