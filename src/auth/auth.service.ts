@@ -9,6 +9,8 @@ import { CredentialsDto } from './dtos';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { appkeys } from 'src/config/keys';
+import { CreateUserDto } from 'src/users/dtos/createUser.dtos';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EmailService } from 'src/email/email.service';
 
 interface TokenPayload {
@@ -31,7 +33,28 @@ export class AuthService {
     private readonly userService: UsersService,
     private jwtService: JwtService,
     private readonly emailService: EmailService,
+    private eventEmitter: EventEmitter2,
   ) {}
+
+  async signup(userData: CreateUserDto) {
+    let user = await this.userService.create(userData);
+    if (user) {
+      // create acccount verification token
+      let token = this.jwtService.sign(
+        { email: user.email },
+        { secret: 'mysecret' },
+      );
+      // create verification link
+      const BASE_URL = 'http://localhost:4000';
+      let verificationLink = `${BASE_URL}/auth/verify-account?token=${token}`;
+      // send welcome email
+      this.eventEmitter.emit('account.created', {
+        receiverEmail: user.email,
+        receiverName: user.firstName,
+        link: verificationLink,
+      });
+    }
+  }
 
   // 1. method that validates user credentails
   // generate tokens on valid credentials
@@ -156,11 +179,11 @@ export class AuthService {
     // create link  , TODO make hostname gloabel
     const reset_link = `localhost:4000/auth/password-reset/${token}`;
     // TODO : Email Service send reset link by
-    this.emailService.sendResetPasswordEmail({
-      userName: user.firstName,
-      receiver: user.email,
-      link: reset_link,
-    });
+    // this.emailService.sendResetPasswordEmail({
+    //   userName: user.firstName,
+    //   receiver: user.email,
+    //   link: reset_link,
+    // });
   }
 
   async resetPassword(token: any, password: string) {

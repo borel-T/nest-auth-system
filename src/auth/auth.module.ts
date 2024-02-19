@@ -7,7 +7,6 @@ import { UsersModule } from 'src/users/users.module';
 import { AccessTokenStrategy } from './strategies/access-token.strategy';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { GoogleOathStrategy } from './strategies/google-oauth.stratety';
-import { EmailService } from 'src/email/email.service';
 
 @Module({
   imports: [UsersModule, PassportModule, JwtModule.register({ global: true })],
@@ -15,7 +14,6 @@ import { EmailService } from 'src/email/email.service';
   providers: [
     AuthService,
     JwtService, // will be used to sign tokens
-    EmailService, // email sender service
     // auth-strategies
     AccessTokenStrategy, // provide the defined jwt-strategy, so it can be injected and used by passport-auth-guard
     RefreshTokenStrategy,

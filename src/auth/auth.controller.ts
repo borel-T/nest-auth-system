@@ -11,7 +11,6 @@ import { AuthService } from './auth.service';
 import { Post } from '@nestjs/common';
 import { CredentialsDto } from './dtos';
 import { CreateUserDto } from 'src/users/dtos/createUser.dtos';
-import { UsersService } from 'src/users/users.service';
 import { PublicRoute } from 'src/commons/decorators';
 import { Request } from 'express';
 import { JwtAuthGuard } from './guards/jwt.guard';
@@ -26,15 +25,12 @@ interface ResetPasswordDto {
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly usersService: UsersService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @PublicRoute()
   @Post('signup')
   async signup(@Body() createUserDto: CreateUserDto) {
-    return await this.usersService.create(createUserDto);
+    return this.authService.signup(createUserDto);
   }
 
   @Post('login')
@@ -66,7 +62,9 @@ export class AuthController {
     return await this.authService.logOut(req.user.sub);
   }
 
-  // GOOGLE AUTG
+  /******************/
+  /*  GOOGLE AUTH   */
+  /******************/
 
   @Get('google')
   @UseGuards(GoogleOauthGuard) // passport understand and redirect to google's access-grant
