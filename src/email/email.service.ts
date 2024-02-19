@@ -1,9 +1,14 @@
 import { MailerService } from '@nestjs-modules/mailer';
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
+import {
+  ACCOUNT_ACTIVATED,
+  ACCOUNT_CREATED,
+} from 'src/commons/events/userEvents';
 
 interface EmailDto {
   receiver: string;
-  subject?: string;
+  subject: string;
   text?: string;
   html?: string;
   template?: string;
@@ -11,9 +16,9 @@ interface EmailDto {
 }
 
 interface EmailTokenDto {
-  receiver: string;
-  userName: string;
-  link: string;
+  receiverEmail: string;
+  receiverName: string;
+  link?: string;
 }
 
 const SENDER = 'tchassemborel@yahoo.fr';
@@ -22,39 +27,60 @@ const SENDER = 'tchassemborel@yahoo.fr';
 export class EmailService {
   constructor(private readonly mailerService: MailerService) {}
 
-  sendWelcomeEmail(emailInfo: EmailDto) {
+  // sends welcome email
+  @OnEvent(ACCOUNT_CREATED, { async: true })
+  sendWelcomeEmail(payload: EmailTokenDto) {
     let options = {
-      ...emailInfo,
+      receiver: payload.receiverEmail,
+      subject: 'Account Created !',
       template: 'welcome',
-      context: { userName: 'Joelito' },
+      context: { user_name: payload.receiverName },
     };
-    this.sendEmail(options);
+    return this.sendEmail(options);
   }
 
-  sendVerficationEmail(data: EmailTokenDto) {
+  // sends email to verify user's account
+  @OnEvent(ACCOUNT_CREATED, { async: true })
+  sendAccountVerificationEmail(payload: EmailTokenDto) {
     let options = {
-      receiver: data.receiver,
-      subject: 'Email Verification',
+      receiver: payload.receiverEmail,
+      subject: 'Email verification',
       template: 'email-verification',
       context: {
-        user_name: data.userName,
-        confirmation_url: data.link,
+        user_name: payload.receiverName,
+        confirmation_url: payload.link,
       },
     };
-    this.sendEmail(options);
+    return this.sendEmail(options);
   }
 
+  // sends email on user's account activation success
+  @OnEvent(ACCOUNT_ACTIVATED, { async: true })
+  sendAcccountActivatedEmail(data: EmailTokenDto) {
+    let options = {
+      receiver: data.receiverEmail,
+      subject: 'Account activated !',
+      template: 'account-activated',
+      context: {
+        user_name: data.receiverName,
+        login_url: data.link,
+      },
+    };
+    return this.sendEmail(options);
+  }
+
+  // sends password reset link to user
   sendResetPasswordEmail(data: EmailTokenDto) {
     let options = {
-      receiver: data.receiver,
+      receiver: data.receiverEmail,
       subject: 'Retreive Your Password',
       template: 'forgot-password',
       context: {
-        user_name: data.userName,
+        user_name: data.receiverName,
         reset_url: data.link,
       },
     };
-    this.sendEmail(options);
+    return this.sendEmail(options);
   }
 
   /* Mail util */
@@ -71,10 +97,10 @@ export class EmailService {
         ...(mailData.context && { context: mailData.context }),
       };
       await this.mailerService.sendMail(options);
-      console.log('email gone...........');
+      console.log(mailData.subject + 'email sent.');
     } catch (error) {
-      console.log('email-error', error);
-      throw new InternalServerErrorException();
+      console.log(mailData.subject + 'email not sent. Error Details ::', error);
+      return false;
     }
   }
 }
