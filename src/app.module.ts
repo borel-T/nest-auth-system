@@ -10,8 +10,8 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     UsersModule,
     AuthModule,
     PrismaModule,
-    EmailModule,
-    EventEmitterModule.forRoot(), //initializes the event emitter and registers any declarative event listeners that exist within your app
+    EmailModule, // @Global() module : it's providers can be injected without importing them in other modules
+    EventEmitterModule.forRoot(), // initializes the event emitter and registers any declarative event listeners that exist within your app
   ],
   controllers: [],
   providers: [],
