@@ -2,17 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Final Welcome Email</title>
+    <title>Email Verification</title>
   </head>
   <body>
     <% const baseUrl = "http://"; %>
 
     <!-- body-content -->
-    <p>Hey <%= user_name %>,</p>
-
-    <p>To get started using Nice App, please confirm your account below:</p>
     <p>
-      <a href="<%= baseUrl + confirmation_url %>">Confirm you account</a>
+      To get started using Nice App, please confirm your email account by
+      clicking on the button below:
+    </p>
+    <p>
+      <a href="<%= baseUrl + confirmation_url %>">Confirm my account</a>
     </p>
 
     <p>
