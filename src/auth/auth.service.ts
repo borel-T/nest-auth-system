@@ -1,4 +1,6 @@
 import {
+  BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -12,6 +14,7 @@ import { appkeys } from 'src/config/keys';
 import { CreateUserDto } from 'src/users/dtos/createUser.dtos';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EmailService } from 'src/email/email.service';
+import { ACCOUNT_PASSWORD_UPDATED } from 'src/commons/events/userEvents';
 
 interface TokenPayload {
   sub: number;
@@ -37,16 +40,21 @@ export class AuthService {
   ) {}
 
   async signup(userData: CreateUserDto) {
-    let user = await this.userService.create(userData);
+    let user = null;
+    try {
+      user = await this.userService.create(userData);
+    } catch (error) {
+      throw new ConflictException('User conflict');
+    }
     if (user) {
       // create acccount verification token
       let token = this.jwtService.sign(
         { email: user.email },
-        { secret: 'mysecret' },
+        { secret: 'email_verification', expiresIn: '48h' },
       );
       // create verification link
-      const BASE_URL = 'http://localhost:4000';
-      let verificationLink = `${BASE_URL}/auth/verify-account?token=${token}`;
+      const HOST_NAME = 'localhost:4000';
+      let verificationLink = `${HOST_NAME}/auth/verify-account?token=${token}`;
       // send welcome email
       this.eventEmitter.emit('account.created', {
         receiverEmail: user.email,
@@ -151,17 +159,24 @@ export class AuthService {
     }
   }
 
-  async verifyUserEmail(token: any) {
+  async verifyUserEmail(token: string) {
     try {
       // verify token validity
       this.jwtService.verify(token, {
-        secret: 'mysecret',
+        secret: 'email_verification',
       });
-      // update user email-verified field
-      // this.userService.update()
     } catch (error) {
-      throw new UnauthorizedException();
+      throw new BadRequestException('Invalid or Expired Token');
     }
+    // check user's existence in DB
+    let decodedUser = this.jwtService.decode(token);
+    // get acutual user
+    let actualUser = await this.userService.getByEmail(decodedUser.email);
+    if (!actualUser) {
+      throw new BadRequestException('User not found');
+    }
+    // update user email-verified field
+    this.userService.update(actualUser.uuid, { emailVerified: true });
   }
 
   async forgotPassword(email: string) {
@@ -186,32 +201,34 @@ export class AuthService {
     // });
   }
 
-  async resetPassword(token: any, password: string) {
+  async resetPassword(token: any, newPassword: string) {
     try {
       // verify token validity
       this.jwtService.verify(token, {
         secret: 'mysecret',
       });
       // decode token to
-      let user = this.jwtService.decode(token, {
+      let decodedUser = this.jwtService.decode(token, {
         json: true,
       });
       // confirm user's existence
-      let userExist = await this.userService.getByEmail(user.email);
+      let userExist = await this.userService.getByEmail(decodedUser.email);
       if (!userExist) {
         throw new UnauthorizedException();
       }
-      // TODO : hash password and update password
-      return this.userService.update(userExist);
-
-      // TODO : send reset - succes email
+      // save user's new password (user-service will hash the password )
+      await this.userService.updatePassword(userExist.uuid, newPassword);
+      // send success email
+      this.eventEmitter.emit(ACCOUNT_PASSWORD_UPDATED, {
+        receiverName: userExist.firstName,
+      });
     } catch (error) {
-      throw new UnauthorizedException();
+      throw new BadRequestException();
     }
   }
 
   /********************
-   * utils method
+   * utils methods    */
   /********************/
 
   private async generateTokens(payload: TokenPayload) {

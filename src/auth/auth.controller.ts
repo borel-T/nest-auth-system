@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -16,12 +17,6 @@ import { Request } from 'express';
 import { JwtAuthGuard } from './guards/jwt.guard';
 import { RefreshTokenGuard } from './guards/refreshToken.guard';
 import { GoogleOauthGuard } from './guards/google-oauth.guard';
-
-interface ResetPasswordDto {
-  userId: string;
-  token: string;
-  password: string;
-}
 
 @Controller('auth')
 export class AuthController {
@@ -49,10 +44,9 @@ export class AuthController {
     );
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get('test')
-  async crat(@Req() req) {
-    return await req.user;
+  @Post('verify-account')
+  async verifyAccount(@Query('token') token: string) {
+    return this.authService.verifyUserEmail(token);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -77,6 +71,10 @@ export class AuthController {
     // generate and return access and refresh tokens
     return this.authService.googleAuth(req.user);
   }
+
+  /******************/
+  /* PASSWORD RESET */
+  /******************/
 
   @Post('forgot-password')
   forgotPassword(@Body() body: { email: string }) {
