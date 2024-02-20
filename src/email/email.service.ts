@@ -4,6 +4,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 import {
   ACCOUNT_ACTIVATED,
   ACCOUNT_CREATED,
+  ACCOUNT_PASSWORD_UPDATED,
 } from 'src/commons/events/userEvents';
 
 interface EmailDto {
@@ -79,6 +80,18 @@ export class EmailService {
         user_name: data.receiverName,
         reset_url: data.link,
       },
+    };
+    return this.sendEmail(options);
+  }
+
+  // sends password reset link to user
+  @OnEvent(ACCOUNT_PASSWORD_UPDATED, { async: true })
+  sendPasswordUpdatedEmail(data: EmailTokenDto) {
+    let options = {
+      receiver: data.receiverEmail,
+      subject: 'Password updated !',
+      template: 'reset-password-success',
+      context: { user_name: data.receiverName },
     };
     return this.sendEmail(options);
   }
