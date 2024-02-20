@@ -25,8 +25,8 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  async getUserById(@Param('id', ParseIntPipe) id: number) {
-    return await this.userService.getById(id);
+  async getUserById(@Param('id', ParseIntPipe) userId: number) {
+    return await this.userService.getById(userId);
   }
 
   @Get('')
@@ -35,12 +35,15 @@ export class UsersController {
   }
 
   @Put(':id')
-  async updateUser(@Body() user: UpdateUserDto) {
-    return this.userService.update(user);
+  async updateUser(
+    @Param('id', ParseIntPipe) userId: number,
+    @Body() user: UpdateUserDto,
+  ) {
+    return this.userService.update(userId, user);
   }
 
   @Delete(':id')
-  async deleteuser(@Param('id') id: number) {
-    return this.userService.delete(id);
+  async deleteuser(@Param('id', ParseIntPipe) userId: number) {
+    return this.userService.delete(userId);
   }
 }

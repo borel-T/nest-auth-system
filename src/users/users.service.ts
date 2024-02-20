@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from './dtos/createUser.dtos';
 import { UpdateUserDto } from './dtos/updateUser.dto';
@@ -28,7 +32,7 @@ export class UsersService {
         lastName: user.lastName,
       },
     });
-
+    // extract and return only user's public data
     return this.getUserPublicData(newUser);
   }
 
@@ -66,8 +70,29 @@ export class UsersService {
     return this.prismaService.user.findMany();
   }
 
-  update(user: UpdateUserDto) {
-    return `updated ${user.email}`;
+  async update(userId: number, userData: UpdateUserDto) {
+    try {
+      let updatedUser = await this.prismaService.user.update({
+        where: { uuid: userId },
+        data: userData,
+      });
+      return this.getUserPublicData(updatedUser);
+    } catch (error) {
+      throw new BadRequestException('User Update Failed');
+    }
+  }
+
+  async updatePassword(userId: number, newPassword: string) {
+    let hashedPassword = await bcrypt.hash(newPassword, 10);
+    try {
+      let updatedUser = await this.prismaService.user.update({
+        where: { uuid: userId },
+        data: { password: hashedPassword },
+      });
+      return this.getUserPublicData(updatedUser);
+    } catch (error) {
+      throw new BadRequestException('Password update Failed');
+    }
   }
 
   delete(id: number) {
