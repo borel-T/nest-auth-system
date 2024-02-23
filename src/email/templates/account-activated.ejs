@@ -5,15 +5,13 @@
     <title>Account activated</title>
   </head>
   <body>
-    <% const baseUrl = "http://"; %>
-
     <!-- body-content -->
     <p>Hey <%= user_name %>,</p>
 
     <p>Your email was verified and your account succesfully activated !</p>
     <p>Access your application now !</p>
     <p>
-      <a href="<%= baseUrl + login_url %>">Login</a>
+      <a href="<%=  login_url %>">Login</a>
     </p>
 
     <p>If you need any help, contact our support team</p>

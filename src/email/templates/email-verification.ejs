@@ -5,15 +5,13 @@
     <title>Email Verification</title>
   </head>
   <body>
-    <% const baseUrl = "http://"; %>
-
     <!-- body-content -->
     <p>
       To get started using Nice App, please confirm your email account by
       clicking on the button below:
     </p>
     <p>
-      <a href="<%= baseUrl + confirmation_url %>">Confirm my account</a>
+      <a href="<%=  confirmation_url %>">Confirm my account</a>
     </p>
 
     <p style="color: rgb(197, 87, 87)">
@@ -26,8 +24,6 @@
       paste the below URL into your web browser.
     </p>
 
-    <a href="<%= baseUrl + confirmation_url %>"
-      ><%= baseUrl + confirmation_url %></a
-    >
+    <a href="<%=  confirmation_url %>"><%= confirmation_url %></a>
   </body>
 </html>
