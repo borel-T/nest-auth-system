@@ -17,6 +17,7 @@ import { Request } from 'express';
 import { JwtAuthGuard } from './guards/jwt.guard';
 import { RefreshTokenGuard } from './guards/refreshToken.guard';
 import { GoogleOauthGuard } from './guards/google-oauth.guard';
+import { updatePasswordDto } from './dtos/updatePassword.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -77,12 +78,24 @@ export class AuthController {
   /******************/
 
   @Post('forgot-password')
-  forgotPassword(@Body() body: { email: string }) {
-    return this.authService.forgotPassword(body.email);
+  async forgotPassword(@Body() body: { email: string }) {
+    try {
+      await this.authService.forgotPassword(body.email);
+      return 'email-sent';
+    } catch (error) {
+      console.log('Error password recover email not sent ::::');
+      return 'error-occured';
+    }
   }
 
-  @Post('reset-password/:token')
-  resetPassword(@Body() body: { token: string; password: string }) {
-    return this.authService.resetPassword(body.token, body.password);
+  @Post('reset-password')
+  async resetPassword(@Body() body: updatePasswordDto) {
+    try {
+      await this.authService.resetPassword(body.token, body.password);
+      return 'passwrod reset success';
+    } catch (error) {
+      console.log('Password update error ::::', error);
+      return 'error-occured';
+    }
   }
 }

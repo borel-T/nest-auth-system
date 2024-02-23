@@ -14,7 +14,10 @@ import { appkeys } from 'src/config/keys';
 import { CreateUserDto } from 'src/users/dtos/createUser.dtos';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EmailService } from 'src/email/email.service';
-import { ACCOUNT_PASSWORD_UPDATED } from 'src/commons/events/userEvents';
+import {
+  ACCOUNT_PASSWORD_FORGOTTEN,
+  ACCOUNT_PASSWORD_UPDATED,
+} from 'src/commons/events/userEvents';
 
 interface TokenPayload {
   sub: number;
@@ -53,8 +56,7 @@ export class AuthService {
         { secret: 'email_verification', expiresIn: '48h' },
       );
       // create verification link
-      const HOST_NAME = 'localhost:4000';
-      let verificationLink = `${HOST_NAME}/auth/verify-account?token=${token}`;
+      let verificationLink = `http://localhost:4000/auth/verify-account?token=${token}`;
       // send welcome email
       this.eventEmitter.emit('account.created', {
         receiverEmail: user.email,
@@ -69,23 +71,28 @@ export class AuthService {
   async logIn(credentials: CredentialsDto) {
     // get user-by-email
     const user = await this.userService.getByEmail(credentials.email);
-
-    // if user exist and password match generate tokens
-    if (user && bcrypt.compare(credentials.password, user.password)) {
-      // generate tokens
-      const tokens = await this.generateTokens({
-        sub: user.uuid,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-      });
-      // save refresh-token to db
-      await this.saveRefreshToken(user.uuid, tokens.refreshToken);
-      // return tokens
-      return tokens;
-    } else {
+    if (!user) {
       throw new NotFoundException();
     }
+    // if user exist and passwords match generate tokens
+    let passwordsMatch = await bcrypt.compare(
+      credentials.password,
+      user.password,
+    );
+    if (!passwordsMatch) {
+      throw new BadRequestException();
+    }
+    // generate tokens
+    const tokens = await this.generateTokens({
+      sub: user.uuid,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    });
+    // save refresh-token to db
+    await this.saveRefreshToken(user.uuid, tokens.refreshToken);
+    // return tokens
+    return tokens;
   }
 
   async logOut(userId: number) {
@@ -189,16 +196,16 @@ export class AuthService {
     let data = { sub: user.uuid, email: user.email };
     let token = this.jwtService.sign(data, {
       secret: 'mysecret',
-      expiresIn: '1m',
+      expiresIn: '48h',
     });
-    // create link  , TODO make hostname gloabel
-    const reset_link = `localhost:4000/auth/password-reset/${token}`;
-    // TODO : Email Service send reset link by
-    // this.emailService.sendResetPasswordEmail({
-    //   userName: user.firstName,
-    //   receiver: user.email,
-    //   link: reset_link,
-    // });
+    // create recovering link
+    const recoverPasswordLink = `http://localhost:4000/auth/password-reset?token=${token}`;
+    // Email Service send reset link by
+    this.eventEmitter.emit(ACCOUNT_PASSWORD_FORGOTTEN, {
+      receiverEmail: user.email,
+      receiverName: user.firstName,
+      link: recoverPasswordLink,
+    });
   }
 
   async resetPassword(token: any, newPassword: string) {
@@ -207,24 +214,24 @@ export class AuthService {
       this.jwtService.verify(token, {
         secret: 'mysecret',
       });
-      // decode token to
-      let decodedUser = this.jwtService.decode(token, {
-        json: true,
-      });
-      // confirm user's existence
-      let userExist = await this.userService.getByEmail(decodedUser.email);
-      if (!userExist) {
-        throw new UnauthorizedException();
-      }
-      // save user's new password (user-service will hash the password )
-      await this.userService.updatePassword(userExist.uuid, newPassword);
-      // send success email
-      this.eventEmitter.emit(ACCOUNT_PASSWORD_UPDATED, {
-        receiverName: userExist.firstName,
-      });
     } catch (error) {
       throw new BadRequestException();
     }
+    // decode token
+    let decodedUser = this.jwtService.decode(token);
+    // confirm user's existence
+    let userExist = await this.userService.getByEmail(decodedUser.email);
+    if (!userExist) {
+      throw new UnauthorizedException();
+    }
+    // save user's new password (user-service will hash the password )
+    await this.userService.updatePassword(userExist.uuid, newPassword);
+    // send success email
+    this.eventEmitter.emit(ACCOUNT_PASSWORD_UPDATED, {
+      receiverName: userExist.firstName,
+      receiverEmail: userExist.email,
+      link: 'http://localhost:4000/login',
+    });
   }
 
   /********************
@@ -243,7 +250,7 @@ export class AuthService {
         expiresIn: '15m',
       }),
     ]);
-    //
+
     return {
       accessToken,
       refreshToken,
