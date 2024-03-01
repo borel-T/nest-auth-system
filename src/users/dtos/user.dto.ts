@@ -8,4 +8,5 @@ export class UserDto {
   hashedRt?: string;
   createdAt: Date;
   updatedAt: Date;
+  role: string;
 }

@@ -25,4 +25,13 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   lastName: string;
+
+  @IsOptional()
+  role: UserRoles;
+}
+
+enum UserRoles {
+  USER = 'USER',
+  ADMIN = 'ADMIN',
+  SUPER_ADMIN = 'SUPER_ADMIN',
 }
