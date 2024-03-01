@@ -24,6 +24,7 @@ interface TokenPayload {
   email: string;
   firstName?: string;
   lastName?: string;
+  role?: String;
 }
 
 const myUser = {
@@ -88,6 +89,7 @@ export class AuthService {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      role: user.role,
     });
     // save refresh-token to db
     await this.saveRefreshToken(user.uuid, tokens.refreshToken);
