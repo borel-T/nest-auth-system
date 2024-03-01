@@ -10,6 +10,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// user entitity
 model User {
 
   uuid Int @id @unique @default(autoincrement())
@@ -30,5 +31,15 @@ model User {
 
   updatedAt DateTime @updatedAt
 
+  role Role @default(USER)
+
   @@map("users") // table will be refered to as "users" table
 }
+
+// user roles
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
