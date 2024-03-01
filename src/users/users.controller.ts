@@ -13,6 +13,9 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dtos/createUser.dtos';
 import { UpdateUserDto } from './dtos/updateUser.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
+import { Roles } from './decorators/roles.decorator';
+import { Role } from './decorators/roles.enum';
+import { RolesGuard } from './guards/roles.guards';
 
 @Controller('users')
 export class UsersController {
@@ -23,7 +26,8 @@ export class UsersController {
     return await this.userService.create(user);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.SUPER_ADMIN) // roles metadata
+  @UseGuards(JwtAuthGuard, RolesGuard) // guards execution order [1,2,..etc]
   @Get(':id')
   async getUserById(@Param('id', ParseIntPipe) userId: number) {
     return await this.userService.getById(userId);
