@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   // create app
@@ -15,6 +16,18 @@ async function bootstrap() {
       // transform: true,  // auto transform types to the declared controllers types
     }),
   );
+
+  /* Swagger */
+  // config swagger
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Auth Api Docs')
+    .setDescription('Auth system documentation')
+    .setVersion('1.0')
+    .addTag('cats')
+    .build();
+  const apiDocumentation = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api', app, apiDocumentation); // params : endpoint, app's module and documention
+  /* End - Swagger */
 
   await app.listen(4000);
 }
