@@ -9,3 +9,10 @@ services:
       POSTGES_USER: borel
       POSTGES_PASSWORD: pass04
       POSTGES_DB: orina
+
+  redis:
+    image: redis
+    env_file:
+      - .env
+    ports:
+      - 6379:6379
