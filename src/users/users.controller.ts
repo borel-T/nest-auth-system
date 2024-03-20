@@ -37,8 +37,12 @@ export class UsersController {
   @Get('cache-example')
   async cachedExample() {
     /* using manual cache methods */
-    this.cacheManager.set('key', 'value', 5000); // set cache using key, value and TTL
-    // this.cacheManager.get("key") // gets the cache by key
+    // await this.cacheManager.set('key', 'value', 5000); // set cache using key, value and TTL
+    // let x = await this.cacheManager.get('key'); // gets the cache by key
+    // console.log('cached', x);
+    // this.cacheManager.del('key');
+    // x = await this.cacheManager.get('key');
+    // console.log('cached', x);
     // this.cacheManager.del("key") // deletes cache with this key
     // this.cacheManager.reset() // clears all cache
     /* using manual cache methods */
@@ -47,7 +51,7 @@ export class UsersController {
       setTimeout(() => {
         if (2 == 2) resolve(34);
         reject();
-      }, 5000);
+      }, 3000);
     });
 
     const res = await someSlowMethod
