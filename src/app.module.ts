@@ -5,6 +5,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { EmailModule } from './email/email.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ConfigModule } from '@nestjs/config';
+import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 /* app.module.ts 
    imports all modules of our application
@@ -25,8 +27,17 @@ import { ConfigModule } from '@nestjs/config';
       // envFilePath: '.development.env', // by default it picks .env if you have other file like dev.env specify it here
       // envFilePath: ['.env.development.local', '.env.development']  //
     }), // using nestjs config-module
+    CacheModule.register({
+      isGlobal: true,
+    }),
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    // TO AUTO CACHE GlOBALLY, provide the APP_INTERCEPTOR a cacheInterceptor
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: CacheInterceptor,
+    // },
+  ],
 })
 export class AppModule {}
